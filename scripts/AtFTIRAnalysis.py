@@ -61,6 +61,21 @@ class AtFtirAnalysis():
         ind = np.where(((w > low) & (w < high)))
 
         self._preprocessed = self._preprocessed.T[ind].T
+        self._multiple_slice = 0
+
+    def take_multiple_slice(self, low=[1100, 1250], high=[1600, 1700]):
+        """
+
+        :param self:
+        :return:
+        """
+        self._low = low
+        self._high = high
+        w = self.wavenumbers
+        ind = np.where(((w > self._low[0]) & (w < self._high[0])) | ((w > self._low[1]) & (w < self._high[1])) )
+
+        self._preprocessed = self._preprocessed.T[ind].T
+        self._multiple_slice = 1
 
     def savitzky_golay(self):
         """
@@ -144,10 +159,17 @@ class AtFtirAnalysis():
                 marker = '.'
 
             ax.scatter(x, y, c=color(index), label=name, marker=marker)
+            ax.plot(x, y, 'k-', alpha=0.5, linewidth=0.5, label='')
             ax.scatter(x.values[-1], y.values[-1], marker='o', color=color(index), s=300, edgecolor='k')
 
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
 
+        v = self._pca.explained_variance_ratio_ * 100
+        ax.set_xlabel('PC 0 : explains {:.1f} % variance'.format(v[0]))
+        ax.set_ylabel('PC 1 : explains {:.1f} % variance'.format(v[1]))
+
+        vs = v[0:2].sum()
+        ax.set_title('Score plot: explained variance {:.1f} %'.format(vs))
         return ax
 
     def plot_pca_3d(self):
@@ -157,7 +179,7 @@ class AtFtirAnalysis():
         color = plt.cm.tab10
 
         fig = plt.figure(1, figsize=(8, 8))
-        ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=22, azim=134)
+        ax = Axes3D(fig, rect=[0, 0, .95, 1], elev=20, azim=45)
 
         for index, item in enumerate(gr):
             name, val = item
@@ -173,6 +195,7 @@ class AtFtirAnalysis():
                 marker = '.'
 
             ax.scatter(x, y, z, c=color(index), label=name, marker=marker)
+
             ax.scatter(x.values[-1], y.values[-1], z.values[-1], marker='o',
                        color=color(index), s=300, edgecolor='k')
             ax.scatter(x.values[0], y.values[0], z.values[0], marker='o',
