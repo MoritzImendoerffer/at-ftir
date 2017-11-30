@@ -17,7 +17,7 @@ from scipy import signal
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
-
+from process import emsc
 
 class AtFtirAnalysis():
     """"""
@@ -111,6 +111,8 @@ class AtFtirAnalysis():
         """
         self._preprocessed = np.gradient(self._preprocessed, order)[axis]
 
+    def emsc(self, samples='all', reference=None, order=2):
+        self._preprocessed = emsc(self._preprocessed, order=order, fit=reference)
 
     '''
     Collection of cluster analysis alogorithms which use self._preprocessed (2D Array)
@@ -201,6 +203,8 @@ class AtFtirAnalysis():
             ax.scatter(x.values[0], y.values[0], z.values[0], marker='o',
                        color=color(index), s=25, edgecolor='k')
 
+
+
         ax.legend()
         v = self._pca.explained_variance_ratio_ * 100
         ax.set_xlabel('PC 0 : explains {:.1f} % variance'.format(v[0]))
@@ -231,6 +235,31 @@ class AtFtirAnalysis():
             ax[i].set_xlabel('Wavenumber')
             ax[i].set_ylabel('Magnitude on unit vector')
             ax[i].legend(loc='best')
+
+        return ax
+
+    def plot_pca_loadings_versus(self, p0=0, p1=1):
+
+        mask = (self.data.columns > self._low) & (self.data.columns < self._high)
+        b = self.data.loc[:, mask]
+        wl = b.columns.values
+
+        fig, ax = plt.subplots(nrows=1, figsize=(8,8))
+
+        x = self._pca.components_[p0]
+        y = self._pca.components_[p1]
+
+        ax.plot(x, y, '.')
+        #ax.plot(x[0], y[0], 'o', label='lower wavelength')
+        #ax.plot(x[-1], y[-1], 'p', label='upper wavelength')
+
+        for t, xt, yt in zip(wl, x, y):
+            ax.annotate(str(t), xy=(xt,yt))
+
+        ax.set_title('Loading plot')
+        ax.set_xlabel('PCA 0')
+        ax.set_ylabel('PCA 1')
+        ax.legend(loc='best')
 
         return ax
 
