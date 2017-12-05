@@ -42,18 +42,18 @@ def sort_int_nicely(l):
 #%%
 
 # get all folders in current directory
-dirs = [entry.path for entry in os.scandir('./data') if entry.is_dir()]
+dirs = [entry.path for entry in os.scandir('../data') if entry.is_dir()]
 
 # etract those with 'data_ir' in folder name
 dirs = [item for item in dirs if 'data_ir' in item.lower()]
 
 # make sure the export directory exists
-if not os.path.exists('./export'):
-    os.makedirs('./export')
+if not os.path.exists('../export'):
+    os.makedirs('../export')
 
-if not os.path.exists('./data'):
+if not os.path.exists('../data'):
     print('THERE IS NO DATA DIRECTORY')
-    
+
 ''' Main section
 '''
 #%% Loop over all folders in dirs and extract metainformation as well as data
@@ -63,7 +63,7 @@ for dir_index, data_dir in enumerate(dirs):
     print(data_dir)
     # the date of the experiment as to be the first item in the folder name
     # [2:] gets rid of './xxxxx'
-    exp_date = data_dir.split('/')[-1].split(' ')[0]
+    exp_date = data_dir.split('/')[-1].split(' ')[0][-6:]
 
     # get all files in folder
     files = os.listdir(data_dir)
@@ -91,7 +91,7 @@ for dir_index, data_dir in enumerate(dirs):
                     # take the metadata in filenames (date, name, time)
                     # only ones
                     if lind == 0:
-                        
+
                         # deal with different exports
                         if len(file.split('.')) > 4:
                             # fields in filenames are delimited by a dot
@@ -101,14 +101,14 @@ for dir_index, data_dir in enumerate(dirs):
                             if file_id[1].isdigit():
                                 time_stamp = file_id[1]  # unused
                                 name = file_id[2]
-                                
+
                         else:
                             file_id = file.split('.')
                             # fields are separated by whitespace
                             # the date is given in the first six entries
                             date = file_id[0][0:6]
                             name = file_id[0][7:]
-                            
+
                         # timepoints are given as ints after the point
                         time = file.split('.')[-1]
 
@@ -143,9 +143,9 @@ for dir_index, data_dir in enumerate(dirs):
 
                 # add the data to the overall data list
                 data.append(data_all)
-                
-      
-        
+
+
+
     #%% make a pandas dataframe with wavenumbers as colums
     wave = list(np.array(x).round(0))
     df = pd.DataFrame(data, index=None,
@@ -154,24 +154,24 @@ for dir_index, data_dir in enumerate(dirs):
     df = df.set_index('time').reindex(a)
 
     #%% pickle the dataframe
-    df.to_pickle('./export/{}_{}_raw.p'.format(exp_date, name))
+    df.to_pickle('../export/{}_{}_raw.p'.format(exp_date, name))
 
     #%%
-    writer = pd.ExcelWriter('./export/{}_{}_raw.xlsx'.format(exp_date, name))
+    writer = pd.ExcelWriter('../export/{}_{}_raw.xlsx'.format(exp_date, name))
     df.to_excel(writer)
     writer.save()
     writer.close()
-    
+
     # append the data of the current dataframe to the overall frame
     if dir_index == 0:
         df_big = df.copy(deep=True)
     else:
         df_big = df_big.append(df)
 
-       
+
 # write the big dataframe to the disk
-df_big.to_pickle('./export/one_to_rule_them_all.p')
-writer = pd.ExcelWriter('./export/one_to_rule_them_all.xlsx')
+df_big.to_pickle('../export/one_to_rule_them_all.p')
+writer = pd.ExcelWriter('../export/one_to_rule_them_all.xlsx')
 df_big.to_excel(writer)
 writer.save()
 writer.close()
