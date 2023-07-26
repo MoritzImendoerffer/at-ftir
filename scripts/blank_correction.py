@@ -21,17 +21,19 @@ def main():
     files.
     """
     # get all files in current folder
-    files = os.listdir('./')
+    rel_path = './export'
+    files = os.listdir(rel_path)
 
     # get all files which end with .p
     file = [f for f in files if '_raw.p' in f]
 
     for index, f in enumerate(file):
+        file_path = rel_path + '/' + f
         # extract the date of the experiment
         name = f.split('_')[0]
 
         # read in the pickled dataframe
-        df = pd.read_pickle(f)
+        df = pd.read_pickle(file_path)
 
         # get all blank values
         mask = df.name.str.contains('blank')
