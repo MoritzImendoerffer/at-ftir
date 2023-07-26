@@ -36,7 +36,7 @@ Analysis is performed as outlined in the notebook [data_analysis](scripts/data_a
 
 The following plot shows the evolution of the principal components for each spectra over time. Four clusters can be seen. The blank runs in gray, one outlier representing a failed experiment (171017) and two subclusters for the other runs.
 
-[Cluster Analysis at equilibrium](plots/pca/clustermaps)
+[Cluster Analysis at equilibrium](plots/clustermaps)
 
 PCA of the spectra over time:
 
