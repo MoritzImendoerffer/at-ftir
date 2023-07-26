@@ -1,47 +1,47 @@
-# Background
+# Overview
 
-This (old) repo contains an approach to analyse data from refolding experiments measured via AT-FTIR. The experiments were performed roughly as such:
+This repository provides an approach for analyzing data from refolding experiments gathered via Attenuated Total Reflectance Fourier Transform Infrared Spectroscopy (AT-FTIR). The experimental process involved:
 
-- Dissolution of inclusion bodies with high urea concentration.
-- Continuous dilution of the IB solution into refolding buffer.
-- AT-FTIR spectra are measured at discrete timepoints.
+- Dissolving inclusion bodies using a high urea concentration.
+- Gradually diluting the solution into a refolding buffer.
+- Measuring AT-FTIR spectra at distinct intervals.
 
-The data consist of AT-FTIR spectra taken over time. Due to the high urea background which changes over time, the spectra are not trivial to analyse. Blank correction is applied based on reference spectra.
+The data comprises AT-FTIR spectra captured over time. Owing to the high urea background that changes over time, the spectra analysis is complex. The feasibility of blank correction was assessed using reference spectra, but was not employed in this analysis.
 
-Due to the lack of proper analysis software like e.g. Simca and the urge to learn more about chemometrics, I implemented some algorithms by hand. The EMSC algorithm is implemented based on the book https://link.springer.com/book/10.1007/978-3-642-17841-2
-
+Due to the absence of specialized analysis software like Simca, and to further chemometrics understanding, certain algorithms were manually implemented. The Extended Multiplicative Signal Correction (EMSC) algorithm, in particular, was implemented based on [this reference book](https://link.springer.com/book/10.1007/978-3-642-17841-2).
 
 ## Disclaimer
-This repo is quite old. The code is not well structured (I had no software development experience at that time) but should work nevertheless.
+Please note, this repository is dated and the code, though functional, lacks structural clarity.
 
-# Aim
+# Objective
+The primary objective was to determine correlations between experiments and enhance understanding of why certain experiments were unsuccessful. The exploratory analysis groups experiments based on their processed AT-FTIR spectra over time, with no intent to regress inputs with outputs.
 
-The analysis clusters the experiments based on their processed AT-FTIR spectra over time. The main goal was to find relationships between experiments and gain better insights why some experiments failed.
+# Methodology
 
-# Method
+The analysis involves the following steps:
 
-The analysis follows more or less following steps:
-
-- Collection of raw data from excel files into [one pickled dataframe](export/one_to_rule_them_all.xlsx) using the file [get_data](scripts/get_data.py)
-- Data preprocessing and clustering using the class [AtFtirAnalysis](scripts/include/AtFtirAnalysis.py)
-    - preprocessing consists mainly of slicing relevant regions of the wavenumber as well as baseline correction if required
-    - classification is performed using PCA as well as via the correlation matrix of each spectra which is converted to an adjacency matrix (described in the notebook [graph_analysis](scripts/graph_analysis.py))
-Analysis is performed as outlined in the notebook [data_analysis](scripts/data_analysis.ipynb)
+- Gathering raw data from Excel files into a [consolidated dataframe](export/one_to_rule_them_all.xlsx) using the [get_data script](scripts/get_data.py).
+- Preprocessing and clustering the data with the [AtFtirAnalysis class](scripts/include/AtFtirAnalysis.py), which primarily slices relevant wavenumber regions and performs baseline correction if necessary. The classification employs Principal Component Analysis (PCA) and the correlation matrix of each spectra, converted into an adjacency matrix. This process is detailed in the [graph_analysis notebook](scripts/graph_analysis.py).
+- The complete analysis is presented in the [data_analysis notebook](scripts/data_analysis.ipynb).
 
 # Results
 
-[Raw Spectra](plots/pca/spectra.png)
+- [Raw Spectra](plots/pca/spectra.png)
+- [Preprocessed and Analyzed Spectra](plots/pca/analyzed_spectra.png)
 
-[The preprocessed and analyzed Spectra](plots/pca/analyzed_spectra.png)
+The subsequent plot presents the evolution of the principal components for each spectra over time, revealing four clusters: the blank runs, one outlier (a failed experiment 171017), and two subclusters for the remaining runs.
 
-The following plot shows the evolution of the principal components for each spectra over time. Four clusters can be seen. The blank runs in gray, one outlier representing a failed experiment (171017) and two subclusters for the other runs.
+- [Cluster Analysis at Equilibrium](plots/clustermaps)
+- [PCA of Spectra over Time](plots/pca/pca.png)
 
-[Cluster Analysis at equilibrium](plots/clustermaps)
+The cluster analysis and correlation matrix yield similar results for all runs except the failed experiment (171017).
 
-PCA of the spectra over time:
+- [Cluster at Equilibrium](plots/clustermaps/clustermap_t60_1200_1800.png)
 
-![Results over time](plots/pca/pca.png)
+The correlation matrix can be transformed into an adjacency matrix and further into a graph, though this requires a threshold to determine connections between experiments.
 
-Similar results for the equilibrium can be observed for the cluster analysis via the correlation matrix for all runs except the failed run 171017:
+- [Graph at Equilibrium](plots/igraph/igraph.png)
 
-![Cluster at equilibrium](plots/clustermaps/clustermap_t60_1200_1800.png)
+# Discussion
+
+In essence, AT-FTIR is a viable tool for monitoring chemical reactions over time. However, the presence of high background noise, especially varying urea concentration, presents significant challenges. It's possible to subtract spectra from blank or control runs displaying only background signals, but this may introduce unwanted artifacts. For this analysis, blank runs weren't subtracted, as all samples underwent similar processing. This allowed for basic clustering. The analysis suggests potential for identifying incorrect starting conditions and variations among runs. More trials are needed to deduce significant conclusions regarding principal component variations for the refolding reaction.
