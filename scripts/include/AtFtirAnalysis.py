@@ -21,11 +21,19 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn import linear_model
 
-
-#from process import emsc
+from sklearn.cross_decomposition import PLSRegression
+from scipy.optimize import nnls
 
 class AtFtirAnalysis():
-    """"""
+    """
+    A class to process and analyze Attenuated Total Reflectance Fourier Transform Infrared (ATR-FTIR) spectra data.
+    
+    Parameters
+    -----
+    dataframe: pandas DataFrame
+        The input DataFrame containing the ATR-FTIR spectra data. Wavenumbers are stored in the column headers of the dataframe
+    """
+
     def __init__(self, dataframe):
         assert isinstance(dataframe, pd.core.frame.DataFrame), 'data object you provided is not a pandas data frame'
         #assert isinstance(info, pd.core.frame.DataFrame), 'info object you provided is not a pandas data frame'
@@ -39,6 +47,7 @@ class AtFtirAnalysis():
         self.data.columns = [int(item) for item in self.data.columns]
 
         self.wavenumbers = np.asarray(self.data.columns, dtype=float)
+
         # holds the pre processed data
         self._preprocessed = self.data.values
 
@@ -48,18 +57,27 @@ class AtFtirAnalysis():
         self.info.name = self.info.name.str.lower()
 
 
-
-
     '''
     Preprocessing methods
     '''
 
     def take_slice(self, low=1300, high=1800):
         """
+        Take a slice of the spectrum within the range specified.
 
-        :param self:
-        :return:
+        Parameters
+        -----
+        low: float, default=1300
+            The lower limit of the slice.
+        
+        high: float, default=1800
+            The upper limit of the slice.
+
+        Returns
+        -----
+        Writes processed dataframe to self._preprocessed
         """
+
         self._low = low
         self._high = high
         w = self.wavenumbers
@@ -68,23 +86,57 @@ class AtFtirAnalysis():
         self._preprocessed = self._preprocessed.T[ind].T
         self._multiple_slice = 0
 
+    def take_multiple_slice(self, low=[1100, 1250], high=[1600, 1700]):
+        """
+        Take multiple slices of the spectrum within the ranges specified.
+
+        Parameters
+        -----
+        low: list of float, default=[1100, 1250]
+            The lower limits of the slices.
+        
+        high: list of float, default=[1600, 1700]
+            The upper limits of the slices.
+
+        Sets
+        -----
+        self._preprocessed (numpy.ndarray): IThe preprocessed data
+        """
+        self._low = low
+        self._high = high
+        w = self.wavenumbers
+        ind = np.where(((w > self._low[0]) & (w < self._high[0])) | ((w > self._low[1]) & (w < self._high[1])) )
+
+        self._preprocessed = self._preprocessed.T[ind].T
+        self._multiple_slice = 1
+
     def savitzky_golay(self):
         """
 
         :param self:
         :return:
         """
-        pass
+        raise NotImplementedError
 
     def low_pass_filter(self, cutoff=3, f_sampling=0.1, order=2):
         """
+        Apply a low pass Butterworth filter to the spectrum.
 
-        :param self:
-        :param cutoff: Cutoff frequency (default = 3)
-        :param f_sampling: Sampling frequency (default = 0.1)
-        :param order: Order of filter (default = 2)
-        :return: stores array in _preprocessed
-        """""
+        Parameters
+        -----
+        cutoff: float, default=3
+            The cutoff frequency of the filter.
+        
+        f_sampling: float, default=0.1
+            The sampling frequency of the filter.
+        
+        order: int, default=2
+            The order of the filter.
+
+        Sets
+        -----
+        self._preprocessed (numpy.ndarray): IThe preprocessed data
+        """
 
         b, a = signal.butter(cutoff, f_sampling, btype='low', analog=False)
         y = signal.lfilter(b, a, self._preprocessed)
@@ -97,8 +149,16 @@ class AtFtirAnalysis():
     def gradient(self, order=2, axis=1):
         """
         Takes the gradient along axis (dfault: rows) and stores it in _preprocessed
-        :param order:
-        :return: gradient along rows
+
+        Parameters:
+        -----
+        order (int): defines the order of the differential
+
+        axis (int): defines the axis across the gradient should be taken
+
+        Sets:
+        -----
+        self._preprocessed (numpy.ndarray): The preprocessed data
         """
         self._preprocessed = np.gradient(self._preprocessed, order)[axis]
 
@@ -149,15 +209,48 @@ class AtFtirAnalysis():
         self._corr = corr
         self._preprocessed = corr
 
-    '''
-    Collection of cluster analysis alogorithms which use self._preprocessed (2D Array)
-    '''
+  
+    def mcr(self, n_components=3, max_iter=500, tol=1e-6):
+        """
+        Performs Multivariate Curve Resolution using Alternating Least Squares (MCR-ALS).
+
+        MCR-ALS is a technique used to decompose complex mixtures into their pure components
+        when the number of components is known a priori. It alternates between fitting the original
+        data and minimizing the residuals using non-negative least squares until convergence.
+
+        Parameters:
+        -----
+        n_components (int): The number of components to extract. Default is 3.
+        max_iter (int): Maximum number of iterations for the optimization algorithm. Default is 500.
+        tol (float): Tolerance for the stopping criteria. Default is 1e-6.
+
+        Sets:
+        -----
+        self._mcr (numpy.ndarray): The extracted components after performing MCR-ALS.
+        """
+        pls = PLSRegression(n_components=n_components)
+        C_old = np.zeros(self._preprocessed.shape)
+        
+        for i in range(max_iter):
+            pls.fit(self._preprocessed, C_old)
+            C = pls.predict(self._preprocessed)
+            C, _ = nnls(C, self._preprocessed)
+            if np.sqrt(np.mean((C - C_old)**2)) < tol:
+                break
+            C_old = C
+        
+        self._mcr = C
 
     def pca(self, n_components=3):
         """
         Principal component analysis of all rows in self._preprocessed
-        :param self:
-        :return: dataframe of principal components
+        
+        Parameters:
+        n_components (int): The number of principal components
+
+        Sets:
+        ------
+        self._pca.df (pandas Dataframe): The dataframe containint the pca results as well as the time
         """
 
         self._pca = PCA(n_components=n_components)
@@ -176,7 +269,17 @@ class AtFtirAnalysis():
     '''
 
     def plot_pca(self, xlim=None, ylim=None):
+        """
+        Plot a 2D scatter plot of the first two principal components for each experiment over time.
 
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
         gr = self._pca.df.groupby('date')
 
         #color = plt.cm.PuOr(np.linspace(0, 1, 50 ))
@@ -195,19 +298,19 @@ class AtFtirAnalysis():
             if any(val.name.str.contains('blank')):
                 marker = 'x'
 
-                ax.scatter(x, y, c=cblank[index], label=name, marker=marker)
+                ax.scatter(x, y, c=len(y)*(cblank[index],), label=name, marker=marker)
                 ax.plot(x, y, 'k-', alpha=0.5, linewidth=0.5, label='')
                 ax.scatter(x.values[-1], y.values[-1], marker='s', color=cblank[index], s=300, edgecolor='k')
 
             else:
                 marker = '.'
                 color = next(col_cycle)
-                ax.scatter(x, y, c=color, label=name, marker=marker)
+                ax.scatter(x, y, c=len(y)*(color,), label=name, marker=marker)
                 ax.plot(x, y, 'k-', alpha=0.5, linewidth=0.5, label='')
                 ax.scatter(x.values[-1], y.values[-1], marker='o', color=color, s=300, edgecolor='k')
 
 
-            ax.annotate(name, xy=(x.values[-1], y.values[-1]), color='r', fontsize=15)
+            # ax.annotate(name, xy=(x.values[-1], y.values[-1]), color='r', fontsize=15)
 
             '''
             bbox_props = dict(boxstyle="round", fc="cyan", ec="b", lw=2, alpha=0.3)
@@ -235,7 +338,17 @@ class AtFtirAnalysis():
         return ax
 
     def plot_pca_3d(self):
+        """
+        Plot a 3D scatter plot of the first two principal components for each experiment over time.
 
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
         gr = self._pca.df.groupby('date')
 
         color = plt.cm.tab10
@@ -283,7 +396,18 @@ class AtFtirAnalysis():
 
 
     def plot_pca_loadings(self):
+        """
+        Plot the loadings of the PCA components for the wavenumbers.
 
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
+       
         mask = (self.data.columns > self._low) & (self.data.columns < self._high)
         b = self.data.loc[:, mask]
 
@@ -305,6 +429,17 @@ class AtFtirAnalysis():
         return ax
 
     def plot_pca_loadings_versus(self, p0=0, p1=1):
+        """
+        Plot the loadings of the PCA components for the principal components.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
 
         mask = (self.data.columns > self._low) & (self.data.columns < self._high)
         b = self.data.loc[:, mask]
@@ -330,7 +465,24 @@ class AtFtirAnalysis():
         return ax
 
     def plot_raw_spectra(self, low=1300, high=1800, step=5, as_analysis=0):
+        """
+        Plot raw spectra of the data.
 
+        Parameters
+        ----------
+        low : int, optional
+            Lower limit of the plot, by default 1300
+        high : int, optional
+            Upper limit of the plot, by default 1800
+        step : int, optional
+            Step size for plotting, by default 5
+        as_analysis : int, optional
+            Whether to plot as analysis, by default 0
+
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
         if as_analysis == 1:
             low = self._low
             high = self._high
@@ -363,7 +515,23 @@ class AtFtirAnalysis():
         return ax
 
     def plot_processed_spectra(self, low=1300, high=1800, step=5, as_analysis=1):
+        """
+        Plot processed spectra of the data.
 
+        Parameters
+        ----------
+        low : int, optional
+            Lower limit of the plot, by default 1300
+        high : int, optional
+            Upper limit of the plot, by default 1800
+        step : int, optional
+            Step size for plotting, by default 5
+        as_analysis: bool, optional
+            if set to true the spectra is plotet as used in the analysis (sliced by low and high)
+        Returns
+        -------
+        matplotlib.axes.Axes: The matplotlib Axes object with the plot.
+        """
         if as_analysis == 1:
             low = self._low
             high = self._high
