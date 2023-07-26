@@ -4,11 +4,19 @@ This (old) repo contains an approach to analyse data from refolding experiments 
 
 The data consist of AT-FTIR spectra taken over time. Due to the high urea background which changes over time due to continuous dilution of the solution, the spectra are not trivial to analyse. Blank correction is applied based on reference spectra.
 
+# Aim
+
+The analysis clusters the experiments based on their processed AT-FTIR spectra over time. The main goal was to find relationships between experiments and gain better insights why some experiments failed.
+
 # Results
 
-The raw spectra of the analysed samples:
+[Raw Spectra](plots/pca/spectra.png)
+[The slized and analyzed Spectra](plots/pca/analyzed_spectra.png)
+[Cluster Analysis at equilibrium](plots/pca/clustermaps)
 
-![alt text](plots/pca/spectra.png)
+PCA over time:
+
+![Results over time](plots/pca/pca.png)
 
 # Disclaimer
 
