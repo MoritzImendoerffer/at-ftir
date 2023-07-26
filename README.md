@@ -11,10 +11,12 @@ The analysis clusters the experiments based on their processed AT-FTIR spectra o
 # Results
 
 [Raw Spectra](plots/pca/spectra.png)
-[The slized and analyzed Spectra](plots/pca/analyzed_spectra.png)
+
+[The preprocessed and analyzed Spectra](plots/pca/analyzed_spectra.png)
+
 [Cluster Analysis at equilibrium](plots/pca/clustermaps)
 
-PCA over time:
+PCA of the spectra over time:
 
 ![Results over time](plots/pca/pca.png)
 
