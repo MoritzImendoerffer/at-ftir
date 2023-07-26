@@ -42,6 +42,6 @@ PCA of the spectra over time:
 
 ![Results over time](plots/pca/pca.png)
 
-Similar results for the equilibrium can be observed for the cluster analysis via the correlation matrix for all runs:
+Similar results for the equilibrium can be observed for the cluster analysis via the correlation matrix for all runs except the failed run 171017:
 
 ![Cluster at equilibrium](plots/clustermaps/clustermap_t60_1200_1800.png)
