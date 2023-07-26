@@ -8,9 +8,7 @@ The data consist of AT-FTIR spectra taken over time. Due to the high urea backgr
 
 The raw spectra of the analysed samples:
 
-```md
 ![alt text](.plots/pca/spectra)
-```
 
 # Disclaimer
 
